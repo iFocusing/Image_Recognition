@@ -26,7 +26,7 @@ def classifer(nclass, dimension, u, delta_2, p, real_labels, testing_images):
 
 
 def usps_d_error(error_rate):
-    f = open("usps d.error", "w")
+    f = open("usps_d.error", "w")
     f.write(str(error_rate) + '\n')
     f.close()
 
