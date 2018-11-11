@@ -1,3 +1,17 @@
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
-venv/
+
+/pip-selfcheck.json
+/pyvenv.cfg
+/bin/
+/include/
+/lib/
+
+/usps_d.param
+
+
+
+/usps d.error
+/usps_d_cm
+
+__pycache__/

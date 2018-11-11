@@ -1,81 +1,87 @@
 import sys
 import numpy as np
-import re
-import matplotlib.pyplot as plt
+import loadData as ld
 
-def loadData(file_path):
-    with open(file_path) as fl:
-        nclass = int(fl.readline())
-        dimension = int(fl.readline())
-        lables = []
-        images = []
-        lines = fl.readlines()
-        single_image = []
-        for line in lines:
-            li = re.findall(r"\d+\.?\d*",line)
-            if len(li) == 1:
-                lables.append(int(li[0]))
-            elif len(single_image) != dimension:
-                single_image += li
-            else:
-                images.append(single_image)
-                single_image = li
-        images.append(single_image)
-    #print(len(lables))
-    #print(lables[7289], images[7289])
-    #print(len(images))
-    fl.close()
-    return nclass, dimension, lables, images
+def estimators(nclass, dimension, labels, images):
+    '''
+    :param nclass: The number of classes(int), For this question should be 10.
+    :param dimension: 16*16 = 256(int) per image.
+    :param labels: It is a np.narray, which contains the real class of corresponding image.
+    :param images: It is a 2D np.narray. Each row of it is also a np.narray(256 dimension,float), which is an image.
+                   labels[i] stores the class of the images[i].
+    :return:
+    u: A dictionary whose key is the class label k(int), and corresponding value is a list, which
+       contains two element [n,m], n indicates the number of images which are labeled with
+       class k, and the m is mean of these images(np.narray(256 dimension,float)).
+    delta_2: A np.narray(256 dimension,float)
+    p: A dictionary whose key is the class label k(int), and corresponding value is the prior probability of class k(float).
+    '''
+    u = {}
+    for i in range(1, nclass + 1):
+        u[i] = [0, np.zeros(dimension)]
+    for index, item in enumerate(labels):
+        u[item] = [u.get(item)[0] + 1, u.get(item)[1] + images[index]]
+    for item in u:
+        u[item][1] = u.get(item)[1] / u.get(item)[0]
+    p = {}
+    for i in range(1, nclass + 1):
+        p[i] = u.get(i)[0] / len(labels)
+    delta_2 = np.zeros(dimension)
+    for index, item in enumerate(images):
+        delta_2 += np.power(item - u.get(labels[index])[1], 2)
+    delta_2 = delta_2 / len(images)
+    return u, delta_2, p
+
 
 # create parameter file
 def usps_d_param(nclass, dimension, u, delta_2, p):
+    '''
+    :param delta_2: It should be a 1D np.narray with 256 dimension or with 256*256 demension
+    '''
+    t = ''
     f = open("usps_d.param", "w")
-    f.write('d\n')
+    if len(delta_2) == dimension:
+        t = 'd'
+        f.write(t + '\n')
+    elif len(delta_2) == dimension * dimension:
+        t = 'f'
+        f.write(t + '\n')
+    else:
+        print("The parameters are in wrong form.\n")
+        quit()
     f.write(str(nclass)+'\n')
     f.write(str(dimension)+'\n')
     for key in u:
         f.write(str(key)+'\n')
         f.write(str(p.get(key))+'\n')
-        f.write(str(u[key][1])+'\n')
-        f.write(str(delta_2)+'\n')
+        for i in u[key][1]:
+            f.write(str(i) + ' ')
+        f.write('\n')
+        if t == 'd':
+            for i in delta_2:
+                f.write(str(i) + ' ')
+            f.write('\n')
+        elif t == 'f':
+            for i in delta_2:
+                for j in range(dimension):
+                    f.write(str(i) + ' ')
+                f.write('\n')
+            f.write('\n')
     f.close()
 
 
-
 def main():
+    '''
+    When this file is called, one training data file path should be given as argument.
+    '''
     print('Number of arguments:', len(sys.argv), 'arguments.')
     print('Argument List:', str(sys.argv))
     if len(sys.argv) == 1:
         print("Please give the training data file.")
     else:
         file_path = sys.argv[1]
-        nclass, dimension, lables, images= loadData(file_path)
-        #print(nclass, dimension, lables[0], images[0])
-        lables = np.array(lables)
-        images = np.array(images).astype(int)
-        #print(type(images[1]))
-        #print(images[1])
-        #print(images[1].reshape(16, 16))
-        #plt.imshow(images[1].reshape(16, 16))
-        #plt.show()
-        u = {}
-        for i in range(1,nclass+1):  #using key:value pairs to store the classname:[N_k,sum[]] 这里写死了classname必须是int 1，2，3，4, ... ,10, not good
-            u[i] = [0,np.zeros(dimension)]
-        for index,item in enumerate(lables):
-            #print(u.get(item)[0],u.get(item)[1])
-            u[item] = [u.get(item)[0] + 1, u.get(item)[1] + images[index]]
-            #print(index,item)
-        #print(u)
-        for item in u:
-            u[item][1] = u.get(item)[1]/u.get(item)[0]
-        #print(u)
-        p={}
-        for i in range(1, nclass+1):  #using key:value pairs to store the classname:[N_k,sum[]] 这里写死了classname必须是1，2，3，4, ... ,10, not good
-            p[i] = u.get(i)[0] / len(lables)
-        delta_2 = np.zeros(dimension)
-        for index,item in enumerate(images):
-            delta_2 += np.power(item - u.get(lables[index])[1],2)
-        delta_2 = delta_2/len(images)
-        #print(len(delta_2))
+        nclass, dimension, labels, images = ld.loadData(file_path)
+        u, delta_2, p = estimators(nclass, dimension, labels, images)
         usps_d_param(nclass, dimension, u, delta_2, p)
+
 main()
