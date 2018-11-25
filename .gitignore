@@ -8,6 +8,10 @@
 /lib/
 
 /usps_d.param
+/usps_cd.param
+/usps_cf.param
+/usps_pd.param
+/usps_pf.param
 /usps_d.error
 /usps_d_cm
 /.DS_Store
