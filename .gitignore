@@ -8,7 +8,8 @@
 /lib/
 
 /usps_d.param
-/usps d.error
+/usps_d.error
 /usps_d_cm
+/.DS_Store
 
 __pycache__/
