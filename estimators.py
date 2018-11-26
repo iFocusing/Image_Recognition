@@ -32,6 +32,7 @@ def estimators(nclass, dimension, labels, images):
     #     delta_2 += np.power(item - u.get(labels[index])[1], 2)
     # delta_2 = delta_2 / len(images)
     cf_delta, cd_delta, pf_delta, pd_delta = estimate_covariance(nclass, dimension, labels, images, u)
+    print('estimata successful')
     return u, cf_delta, cd_delta, pf_delta, pd_delta, p
 
 
@@ -59,61 +60,60 @@ def estimate_covariance(nclass, dimension, labels, images, u):
         pf_delta += cf_delta.get(item)
         cf_delta[item] = cf_delta.get(item)/u.get(item)[0]
     pf_delta = pf_delta/len(labels)
-    print('cf_delta:', cf_delta)
-    print('pf_delta:', pf_delta)
+    #print('cf_delta:', cf_delta)
+    #print('pf_delta:', pf_delta)
 
     # calculate cd_delta
     for item in cd_delta:
         pd_delta += cd_delta.get(item)
         cd_delta[item] = cd_delta.get(item)/u.get(item)[0]
     pd_delta = pd_delta/len(labels)
-    print('cd_delta:', cd_delta)
-    print('pd_delta:', pd_delta)
+    #print('cd_delta:', cd_delta)
+    #print('pd_delta:', pd_delta)
 
     return cf_delta, cd_delta, pf_delta, pd_delta
 
 
 # create parameter file
-def usps_d_param(nclass, dimension, u, delta_2, t, p):
+def usps_param_usps_cf(nclass, dimension, u, delta_2, t, p):
     # TODO: According t(type) write files;
     """
     :param delta_2: It should be a 1D np.narray with 256 dimension or with 256*256 demension
     """
-    if t == 'usps_cf':
-        f = open(t + ".param", "w")
-        f.write(t + '\n')
-        f.write(str(nclass) + '\n')
-        f.write(str(dimension) + '\n')
-        for key in u:
-            f.write(str(key) + '\n')
-            f.write(str(p.get(key)) + '\n')
-            for i in u[key][1]:
+    f = open(t + ".param", "w")
+    f.write(t + '\n')
+    f.write(str(nclass) + '\n')
+    f.write(str(dimension) + '\n')
+    for key in u:
+        f.write(str(key) + '\n')
+        f.write(str(p.get(key)) + '\n')
+        for i in u[key][1]:
+            f.write(str(i) + ' ')
+        f.write('\n')
+        for row in delta_2.get(key):
+            for i in row:
                 f.write(str(i) + ' ')
             f.write('\n')
-            for row in delta_2.get(key):
-                for i in row:
-                    f.write(str(i) + ' ')
-                f.write('\n')
-            f.write('\n')
-        f.close()
+    f.close()
 
-    elif t == 'usps_cd':
-        f = open(t + ".param", "w")
-        f.write(t + '\n')
-        f.write(str(nclass) + '\n')
-        f.write(str(dimension) + '\n')
-        for key in u:
-            f.write(str(key) + '\n')
-            f.write(str(p.get(key)) + '\n')
-            for i in u[key][1]:
-                f.write(str(i) + ' ')
-            f.write('\n')
-            for i in delta_2.get(key):
-                f.write(str(i) + ' ')
-            f.write('\n')
-        f.close()
+def usps_param_usps_cd(nclass, dimension, u, delta_2, t, p):
+    f = open(t + ".param", "w")
+    f.write(t + '\n')
+    f.write(str(nclass) + '\n')
+    f.write(str(dimension) + '\n')
+    for key in u:
+        f.write(str(key) + '\n')
+        f.write(str(p.get(key)) + '\n')
+        for i in u[key][1]:
+            f.write(str(i) + ' ')
+        f.write('\n')
+        for i in delta_2.get(key):
+            f.write(str(i) + ' ')
+        f.write('\n')
+    f.close()
 
-    elif t == 'usps_pf':
+
+def usps_param_usps_pf(nclass, dimension, u, delta_2, t, p):
         f = open(t + ".param", "w")
         f.write(t + '\n')
         f.write(str(nclass) + '\n')
@@ -125,31 +125,28 @@ def usps_d_param(nclass, dimension, u, delta_2, t, p):
                 f.write(str(i) + ' ')
             f.write('\n')
             for row in delta_2:
-                for i in row:
-                    f.write(str(i) + ' ')
+                for n in row:
+                    f.write(str(n) + ' ')
                 f.write('\n')
-            f.write('\n')
         f.close()
 
-    elif t == 'usps_pd':
-        f = open(t + ".param", "w")
-        f.write(t + '\n')
-        f.write(str(nclass)+'\n')
-        f.write(str(dimension)+'\n')
-        for key in u:
-            f.write(str(key)+'\n')
-            f.write(str(p.get(key))+'\n')
-            for i in u[key][1]:
-                f.write(str(i) + ' ')
-            f.write('\n')
-            for i in delta_2:
-                f.write(str(i) + ' ')
-            f.write('\n')
-        f.close()
 
-    else:
-        print("The parameters are in wrong form.\n")
-        quit()
+def usps_param_usps_pd(nclass, dimension, u, delta_2, t, p):
+    f = open(t + ".param", "w")
+    f.write(t + '\n')
+    f.write(str(nclass)+'\n')
+    f.write(str(dimension)+'\n')
+    for key in u:
+        f.write(str(key)+'\n')
+        f.write(str(p.get(key))+'\n')
+        for i in u[key][1]:
+            f.write(str(i) + ' ')
+        f.write('\n')
+        for i in delta_2:
+            f.write(str(i) + ' ')
+        f.write('\n')
+    f.close()
+
 
 def main():
     """
@@ -163,9 +160,15 @@ def main():
         file_path = sys.argv[1]
         nclass, dimension, labels, images = ld.loadData(file_path)
         u, cf_delta, cd_delta, pf_delta, pd_delta, p = estimators(nclass, dimension, labels, images)
-        usps_d_param(nclass, dimension, u, cf_delta, 'usps_cf', p)
-        usps_d_param(nclass, dimension, u, cd_delta, 'usps_cd', p)
-        usps_d_param(nclass, dimension, u, pf_delta, 'usps_pf', p)
-        usps_d_param(nclass, dimension, u, pd_delta, 'usps_pd', p)
+        # if np.linalg.det(pf_delta) == 0:
+        #     print('98********')
+        # else:
+        #     delta_2_inv = np.linalg.inv(pf_delta)
+        #     print(delta_2_inv)
+        usps_param_usps_cf(nclass, dimension, u, cf_delta, 'usps_cf', p)
+        usps_param_usps_cd(nclass, dimension, u, cd_delta, 'usps_cd', p)
+        usps_param_usps_pf(nclass, dimension, u, pf_delta, 'usps_pf', p)
+        usps_param_usps_pd(nclass, dimension, u, pd_delta, 'usps_pd', p)
+
 
 main()
