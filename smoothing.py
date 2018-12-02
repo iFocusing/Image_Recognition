@@ -13,17 +13,18 @@ def smoothing(cf_delta, cd_delta, pf_delta, pd_delta):
     smoothed_delta = {}
     for item in lamda:
         print(item)
+        te = {}
         for key in cf_delta:
-            cf_delta[key] = item * pf_delta + (1 - item) * cf_delta[key]
-        smoothed_delta[item] = cf_delta
+            te[key] = item * pf_delta + (1 - item) * cf_delta[key]
+        smoothed_delta[item] = te
     return smoothed_delta
 
 def classifer_smoothed_delta(nclass, dimension, u, smoothed_delta, p, real_labels, testing_images):
-    error = 0
     error_rates = {}
     testing_labels = np.zeros(len(real_labels)).astype(int)  # labels that our classifier gives
     # print(smoothed_delta.get(1))
     for lamda in smoothed_delta:
+        error = 0
         print('lamda:',lamda) # this item should be the lamda
         # print(smoothed_delta.get(lamda)) # this should be a dict b = {} / b.get(class) is the full covariance matrix for that class
         for index, x in enumerate(testing_images):
@@ -32,14 +33,16 @@ def classifer_smoothed_delta(nclass, dimension, u, smoothed_delta, p, real_label
             for key, value in p.items():
                 # print('p:',key)
                 # d.iteritems: an iterator over the (key, value) items
-                r_x[key] = value * math.exp(
-                    -1 / 2 * np.matmul(np.matmul(x - u.get(key)[1], np.linalg.inv(smoothed_delta.get(lamda).get(key))), (x - u.get(key)[1])))
-            # print(r_x)
+                # r_x[key] = value * math.exp(
+                #     -1 / 2 * np.matmul(np.matmul(x - u.get(key)[1], np.linalg.inv(smoothed_delta.get(lamda).get(key))), (x - u.get(key)[1])))
+                r_x[key] = math.log(value) - 0.5 * (np.matmul(np.matmul(x - u.get(key)[1], np.linalg.inv(smoothed_delta.get(lamda).get(key))), (x - u.get(key)[1])))
+                # print(r_x)
             sorted_by_value = sorted(r_x.items(), key=lambda kv: kv[1], reverse=True)
             testing_labels[index] = sorted_by_value[0][0]
             if real_labels[index] != testing_labels[index]:
                 error += 1
         error_rates[lamda] = error / len(real_labels)
+
     print(error_rates)
     return testing_labels, error_rates
 
@@ -55,11 +58,11 @@ def errors(error_rate):
 def plot_errors(error_rates):
     lamda = []
     error = []
-    for key in errors:
+    for key in error_rates:
         lamda.append(math.log(key, 10))
-        error.append(errors.get(key))
+        error.append(error_rates.get(key))
     print(lamda, "\n", error)
-    plt.plot(lamda, error, 'ro')
+    plt.plot(lamda, [item * 10 for item in error])
     plt.axis([-7, 1, 0, 1])
     plt.show()
 
